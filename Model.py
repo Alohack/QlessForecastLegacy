@@ -6,6 +6,8 @@ from EventGenerator import event_generator
 from EventGenerator import str_to_datetime
 from EventGenerator import datetime_to_seconds
 from sklearn.linear_model import LinearRegression
+from sklearn.neural_network import MLPRegressor
+from sklearn.neighbors import KNeighborsRegressor
 
 def get_model(df):
     cq = ConsumerQueue()
@@ -14,7 +16,7 @@ def get_model(df):
     X = []
     y = []
     
-    for index, consumer_id, e_type, date, employee_id in event_generator(df):
+    for index, consumer_id, e_type, date, employee_id, forecast_seconds in event_generator(df):
         if prev_date != date.date():
             cq.clear()
             prev_date = date.date()
@@ -23,7 +25,10 @@ def get_model(df):
             summon_date = str_to_datetime(df[df.index == index]['summon_date'].iloc[0])
             
             if summon_date is not np.nan:
-                X.append([len(cq.wait_queue)])
+                
+                len_queue = len(cq.wait_queue)
+                
+                X.append([forecast_seconds, datetime_to_seconds(date)])
                 y.append(datetime_to_seconds(summon_date) - datetime_to_seconds(date))
             
             cq.enter_consumer(consumer_id, seconds)
@@ -34,5 +39,5 @@ def get_model(df):
             
     X = np.array(X)
     y = np.array(y)
-    reg = LinearRegression().fit(X, y)
+    reg = KNeighborsRegressor(n_neighbors=10).fit(X, y)
     return reg, X, y

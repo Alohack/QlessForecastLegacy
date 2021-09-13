@@ -29,6 +29,12 @@ class ConsumerQueue:
         self.wait_queue = []
         self.serve_queue = []
         
-    def forecast_wait_time(self, consumer_id, time):
+    def forecast_wait_time(self, consumer_id, forecast_seconds, time):
         seconds = datetime_to_seconds(time)
-        return self.reg.predict(np.array([[len(self.wait_queue)]]))[0]
+        len_queue = len(self.wait_queue)
+        return self.reg.predict(np.array([[forecast_seconds, datetime_to_seconds(time)]]))[0]
+    
+# confirmedTicketDuration, confirmedTicketUnits, UnconfirmedTicketDuration, UnconfirmedTicketUnits
+# rejoinDuration, rejoinUnits
+# 
+#

@@ -45,5 +45,8 @@ def event_generator(df):
                 
         event_indexes[min_i] += 1
         row = df[df.index == min_e_index]
-        yield min_e_index, row['consumer_id'].iloc[0], event_types[min_i], min_date, row['employee_id'].iloc[0]
+        if 'forecast_seconds' in row:
+            yield min_e_index, row['consumer_id'].iloc[0], event_types[min_i], min_date, row['employee_id'].iloc[0], row['forecast_seconds'].iloc[0]
+        else:
+            yield min_e_index, row['consumer_id'].iloc[0], event_types[min_i], min_date, row['employee_id'].iloc[0], None
 

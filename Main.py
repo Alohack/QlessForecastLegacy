@@ -30,9 +30,9 @@ def get_serve_times(df):
         serve_times_dict[index] = row['serve_times']
     return serve_times_dict
 
-train = pd.read_csv('C:\\Users\\Admin\\Documents\\ProjectsFolder\\Qless_v2\\train.csv')
+train = pd.read_csv('C:\\Users\\Admin\\Documents\\ProjectsFolder\\Qless_v2\\train1.csv')
 train = train.drop(['merchant_id','location_id','service_id'], axis=1)
-test = pd.read_csv('C:\\Users\\Admin\\Documents\\ProjectsFolder\\Qless_v2\\test.csv')
+test = pd.read_csv('C:\\Users\\Admin\\Documents\\ProjectsFolder\\Qless_v2\\test1.csv')
 test = test.drop(['merchant_id','location_id','service_id'], axis=1)
 
 reg, X, y = get_model(train)
@@ -41,14 +41,17 @@ cq = ConsumerQueue(reg)
 forecasted = []
 prev_date = datetime.strptime("9999-01-01 0:0:0", '%Y-%m-%d %H:%M:%S')
 
-for index, consumer_id, e_type, date, employee_id in event_generator(test):
+X_test = []
+y_test = []
+
+for index, consumer_id, e_type, date, employee_id, forecast_seconds in event_generator(test):
     if prev_date != date:
         cq.clear()
         prev_date = date
     seconds = datetime_to_seconds(date)
     if e_type == 'enter_date':
         cq.enter_consumer(consumer_id, seconds)
-        forecasted.append([consumer_id, cq.forecast_wait_time(consumer_id,  date), seconds, None])
+        forecasted.append([consumer_id, cq.forecast_wait_time(consumer_id,forecast_seconds,  date), seconds, None, forecast_seconds])
     elif e_type == 'summon_date':
         cq.summon_consumer(consumer_id, employee_id, seconds)
         for i in range(len(forecasted)):
@@ -57,4 +60,9 @@ for index, consumer_id, e_type, date, employee_id in event_generator(test):
                 break
     elif e_type == 'departure_date' or  e_type == 'cancel_date' :
         cq.mark_departed(consumer_id)
+        
 loss = np.array([x[3] - x[1] for x in forecasted if x[3] is not None and x[1] is not None])
+print("test squared error:  ", np.sqrt(sum(loss**2) / len(loss)))
+print("test absolute error: ", sum(abs(loss) / len(loss)))
+print("test max loss:       ", max(abs(loss)))
+plt.scatter(X[:, 0], y)
